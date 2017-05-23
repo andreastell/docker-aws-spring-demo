@@ -4,21 +4,96 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+		jcenter()
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("com.bmuschko:gradle-docker-plugin:3.0.7")
 	}
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
+
+
+/**
+ * Executes a shell cmd.
+ * @param cmd the cmd.
+ * @param consumer consumes stdout, line by line.
+ */
+def shell(cmd, consumer) {
+    def proc = cmd.execute()
+    proc.in.eachLine consumer
+    proc.err.eachLine { println it }
+    proc.waitFor()
+}
+
+/**
+ * Returns the build number from git rep, i.e. number of commits.
+ */
+project.ext.getBuildNumber = { ->
+    def num = 0
+    shell("git rev-list --all", { num++ })
+    num
+}
+
+/**
+ * Returns the current branch.
+ */
+project.ext.gitBranch = { ->
+    def branch = ""
+    shell("git rev-parse --abbrev-ref HEAD", { branch = it })
+    branch
+}
+
+
+/**
+ * Returns the version name from the latest Git tag. with commits since tag, last commit ref and dirty flag if
+ * the repo is dirty.
+ */
+def getVersionName = { ->
+    def version = ""
+    shell("git describe --tags --dirty=.dirty", { version = it.trim() })
+    if (!version.endsWith(".dirty")) {
+        version = version + "." + project.ext.getBuildNumber()
+    }
+    version
+}
+
+allprojects {
+
+    version getVersionName()
+
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+
+    eclipse {
+        classpath {
+            containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+            containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
+        }
+    }
+
+}
+
+
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+//apply plugin: 'war'
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
@@ -36,13 +111,78 @@ dependencies {
 	compile('org.springframework.cloud:spring-cloud-starter-config')
 	compile('org.springframework.cloud:spring-cloud-config-server')
 	compile('org.springframework.boot:spring-boot-starter-web')
+    compile("org.projectlombok:lombok:1.16.16")
+    compile("net.bull.javamelody:javamelody-core:1.60.0")
+    //Swagger
+    compile("io.springfox:springfox-swagger2:2.6.1")
+    compile("io.springfox:springfox-swagger-ui:2.6.1")
 	runtime('org.springframework.boot:spring-boot-devtools')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile('org.springframework.restdocs:spring-restdocs-mockmvc')
+
+
 }
 
+//dependency-management-plugin, keep consistent with spring-boot versions
 dependencyManagement {
 	imports {
 		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
 	}
+
+}
+
+processResources {
+    filesMatching("**/*.yml") {
+        project.ext.build_timestamp = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        project.ext.build_branch = gitBranch()
+        project.ext.build_number = getBuildNumber()
+        expand(project.properties)
+    }
+}
+
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+
+task createDockerfile(type: Dockerfile) {
+    destFile = project.file('resources/Dockerfile')
+    from 'ofayau/ejre:8-jre'
+    maintainer 'Andreas Tell <andreas.tell@callistaenterprise.se>'
+    exposePort 8080
+    copyFile "libs/${jar.baseName}-${jar.version}.jar", "${jar.baseName}-${jar.version}.jar"
+    entryPoint 'java','-Dspring.profiles.active=prod','-Djava.security.egd=file:/dev/urandom','-jar',"${jar.baseName}-${jar.version}.jar"
+}
+
+task buildDockerImage(type: DockerBuildImage) {
+    dependsOn jar, createDockerfile
+//	if (System.env.DOCKER_HOST) {
+//		url = "$System.env.DOCKER_HOST".replace("tcp","https")
+//		if (System.env.DOCKER_CERT_PATH) {
+//			certPath = new File(System.env.DOCKER_CERT_PATH)
+//		}
+//	} else {
+//		url = 'unix:///var/run/docker.sock'
+//	}
+    inputDir = createDockerfile.destFile.parentFile
+    tag = "demoapi/${jar.baseName}:${jar.version}"
+}
+
+task makeDist(type: Zip) {
+    dependsOn "build"
+    destinationDir file("$buildDir")
+    baseName "archive"
+    from "build/libs"
+    into("libs")
+}
+
+task archiveZip(type: Zip) {
+    dependsOn bootJar, createDockerfile
+    baseName = 'archive'
+    destinationDir file("$buildDir")
+
+    from fileTree('resources') // do not specify directory
+
+    // if you would like to put file into some directory, specify it.
+    from (tasks.jar.archivePath) {
+        into 'libs'
+    }
 }

@@ -1,0 +1,68 @@
+
+spring:
+  output:
+      ansi:
+        enabled: always
+  jackson:
+      property-naming-strategy: LOWER_CASE
+      date-format: yyyy-MM-dd'T'HH:mm:ssZ
+
+info:
+  app:
+    name: ${name}
+    description: Demo API
+    version: ${version}
+    build:
+      timestamp: ${build_timestamp}
+      branch: ${build_branch}
+      number: ${build_number}
+
+server:
+  contextPath: /demo
+  port: 8080
+
+management:
+  context-path: /admin
+  security:
+    # Security disabled to view full content of health api
+    enabled: false
+  health:
+    diskspace:
+      threshold: 1048576000 #1GB
+      enabled: true
+
+
+#Needed to get swagger generated both using "run SwaggerIntegrationTest" and "gradle build"
+swagger:
+  outputDir: ./build/swagger
+  specFile: swagger.json
+
+--- # Default profile starts here
+
+# default develop and build configuration
+# use a H2 embedded database
+# automatically loads test-data from data-h2.sql file
+spring:
+  profiles: default
+
+# All endpoints enabled for default profile
+endpoints:
+  enabled: true
+
+--- # Prod profile starts here
+
+spring:
+  profiles: prod
+
+# All endpoints but health and actuator are disabled in production
+endpoints:
+  enabled: false
+  actuator:
+    enabled: true
+  health:
+    enabled: true
+  info:
+    enabled: true
+  trace:
+    enabled: true
+
