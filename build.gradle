@@ -32,9 +32,16 @@ def shell(cmd, consumer) {
  * Returns the build number from git rep, i.e. number of commits.
  */
 project.ext.getBuildNumber = { ->
-    def num = 0
-    shell("git rev-list --all", { num++ })
-    num
+
+    def awsCodeBuildId = System.getenv("CODEBUILD_BUILD_ID") ?: null
+    
+    if(awsCodeBuildId == null) {
+        def num = 0
+        shell("git rev-list --all", { num++ })
+        num
+    } else {
+        awsCodeBuildId
+    }
 }
 
 /**
@@ -184,4 +191,9 @@ task createAWSJar(type: Copy) {
     destinationDir file("$buildDir")
     from tasks.jar.archivePath
     rename('(.*).jar', 'application.jar') // To stick with the Elastic Beanstalk convention
+}
+
+bootRun {
+    // support passing -Dsystem.property=value to bootRun task
+    systemProperties = System.properties
 }
