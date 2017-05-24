@@ -166,17 +166,9 @@ task buildDockerImage(type: DockerBuildImage) {
     tag = "demoapi/${jar.baseName}:${jar.version}"
 }
 
-task makeDist(type: Zip) {
-    dependsOn "build"
-    destinationDir file("$buildDir")
-    baseName "archive"
-    from "build/libs"
-    into("libs")
-}
-
-task archiveZip(type: Zip) {
+task archiveDockerZip(type: Zip) {
     dependsOn bootJar, createDockerfile
-    baseName = 'archive'
+    baseName = 'archive-docker'
     destinationDir file("$buildDir")
 
     from fileTree('resources') // do not specify directory
