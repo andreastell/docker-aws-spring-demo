@@ -178,3 +178,10 @@ task archiveDockerZip(type: Zip) {
         into 'libs'
     }
 }
+
+task createAWSJar(type: Copy) {
+    dependsOn bootJar
+    destinationDir file("$buildDir")
+    from tasks.jar.archivePath
+    rename('(.*).jar', 'application.jar') // To stick with the Elastic Beanstalk convention
+}
