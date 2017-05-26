@@ -109,14 +109,9 @@ repositories {
 }
 
 
-ext {
-	springCloudVersion = 'Finchley.BUILD-SNAPSHOT'
-}
 
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-actuator')
-	compile('org.springframework.cloud:spring-cloud-starter-config')
-	compile('org.springframework.cloud:spring-cloud-config-server')
 	compile('org.springframework.boot:spring-boot-starter-web')
 
     compile("com.google.zxing:core:3.2.1")
@@ -134,14 +129,6 @@ dependencies {
     testCompile('io.rest-assured:rest-assured:3.0.+')
     testCompile('io.rest-assured:json-path:3.0.+')
 
-
-}
-
-//dependency-management-plugin, keep consistent with spring-boot versions
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-	}
 
 }
 
@@ -168,14 +155,6 @@ task createDockerfile(type: Dockerfile) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn jar, createDockerfile
-//	if (System.env.DOCKER_HOST) {
-//		url = "$System.env.DOCKER_HOST".replace("tcp","https")
-//		if (System.env.DOCKER_CERT_PATH) {
-//			certPath = new File(System.env.DOCKER_CERT_PATH)
-//		}
-//	} else {
-//		url = 'unix:///var/run/docker.sock'
-//	}
     inputDir = createDockerfile.destFile.parentFile
     tag = "demoapi/${jar.baseName}:${jar.version}"
 }
@@ -204,3 +183,14 @@ bootRun {
     // support passing -Dsystem.property=value to bootRun task
     systemProperties = System.properties
 }
+
+//task zip(type: Zip, dependsOn: bootRepackage) {
+//    from('build/libs') {
+//        include '*.jar'
+//    }
+//    from 'conf'
+//}
+//
+//build.dependsOn(zip)
+
+defaultTasks 'clean', 'build'
