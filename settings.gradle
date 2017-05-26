@@ -1,0 +1,4 @@
+
+include 'barcode'
+//include 'barcode-bdd-test'
+//include 'barcode-load'
