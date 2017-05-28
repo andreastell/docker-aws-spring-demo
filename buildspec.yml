@@ -1,4 +1,4 @@
-version: 0.1
+version: 0.2
 
 phases:
   install:
@@ -10,11 +10,11 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - sh gradlew bootJar
+      - sh gradlew createAWSJar
   post_build:
     commands:
       - echo Build completed on `date`
 artifacts:
   files:
-    - build/libs/docker-aws-spring-demo*.jar
+    - barcode/build/application.jar
   discard-paths: yes
