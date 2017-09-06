@@ -16,7 +16,7 @@ public abstract class SmokeTestSupport {
 
     @Before
     public void setup() {
-        String port = System.getProperty("server.port");
+        String port = System.getenv("server.port");
         if (port == null) {
             RestAssured.port = Integer.valueOf(8080);
         }
@@ -25,13 +25,13 @@ public abstract class SmokeTestSupport {
         }
 
 
-        String basePath = System.getProperty("server.base");
+        String basePath = System.getenv("server.base");
         if(basePath==null){
             basePath = "";
         }
         RestAssured.basePath = basePath;
 
-        String baseHost = System.getProperty("server.host");
+        String baseHost = System.getenv("server.host");
         if(baseHost==null){
             baseHost = "http://localhost";
         }
