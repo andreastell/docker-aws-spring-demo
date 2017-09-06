@@ -14,6 +14,11 @@ import static org.hamcrest.Matchers.is;
 public class SmokeTests extends SmokeTestSupport  {
 
 	@Test
+	public void canAccessGoogle() {
+		given().when().get("http://www.google.com:80").then().statusCode(200);
+	}
+
+	@Test
 	public void appIsUp() {
 		get("/admin/health");
 	}
