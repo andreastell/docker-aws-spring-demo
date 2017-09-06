@@ -3,15 +3,19 @@ package se.callistaenterprise;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
+import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.when;
 
+@Slf4j
 public abstract class SmokeTestSupport {
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         String port = System.getProperty("server.port");
         if (port == null) {
             RestAssured.port = Integer.valueOf(8080);
@@ -32,6 +36,8 @@ public abstract class SmokeTestSupport {
             baseHost = "http://localhost";
         }
         RestAssured.baseURI = baseHost;
+
+        log.info("baseURI :'{}', basePath :'{}', port: '{}' ", RestAssured.baseURI, RestAssured.basePath, RestAssured.port);
 
     }
 
