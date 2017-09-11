@@ -36,8 +36,8 @@ public class BarcodeController {
             @RequestParam(value = "format", defaultValue = "QR_CODE") String format,
             @RequestParam(value = "content", defaultValue = "http://callistaenterprise.se/event/") String content,
             @RequestParam(value = "margin", defaultValue = "0") int margin,
-            @RequestParam(value = "height", defaultValue = "250") int height,
-            @RequestParam(value = "width", defaultValue = "250") int width,
+            @RequestParam(value = "height", defaultValue = "200") int height,
+            @RequestParam(value = "width", defaultValue = "200") int width,
             HttpServletResponse res) throws Exception {
 
         log.info("RENDER barcode [height:{}, width:{}, margin:{}, content:{}, format:{}]", height, width, margin, content, format);
