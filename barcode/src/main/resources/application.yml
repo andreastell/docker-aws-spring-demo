@@ -18,7 +18,8 @@ info:
       number: ${build_number}
 
 server:
-  contextPath: /demo
+  servlet:
+    contextPath: /breakfast
   port: 8080
 
 management:
